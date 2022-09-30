@@ -2,7 +2,11 @@
 
 # tcpdump -i lo -wv port 6121 test.pcap
 
-# Limita a taxa de tranferência para 100 mbits
+# Limita a taxa de tranferência para ${taxa} mbits
+
+taxa="100"
+atraso="10"
+varicao="10"
 
 clean () {
   sudo tc qdisc del dev eth0 root
@@ -11,14 +15,14 @@ clean () {
 
 quic_normal () {
   echo "Run normal"
-  sudo tc qdisc add dev eth0 root tbf rate 100mbit burst 32kbit latency 400ms
+  sudo tc qdisc add dev eth0 root tbf rate ${taxa}mbit burst 32kbit latency 400ms
   touch ~/download
   touch ~/quic_normal.pcap
 
   tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
 
   cd ~/chromium/src
-  timeout 120s bash -c while :
+  timeout 120s bash -c -- while :
   do
     ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done
@@ -28,14 +32,14 @@ quic_normal () {
 }
 quic_delay () {
   echo "Run delay"
-  sudo tc qdisc add dev eth0 root netem delay 10ms rate 100mbit
+  sudo tc qdisc add dev eth0 root netem delay ${atraso}ms rate ${taxa}mbit
   touch ~/download
   touch ~/quic_delay.pcap
 
   tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_delay.pcap &> /dev/null &
 
   cd ~/chromium/src
-  timeout 120s bash -c while :
+  timeout 120s bash -c -- while :
   do
     ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done
@@ -46,14 +50,14 @@ quic_delay () {
 
 quic_delay_jitter () {
   echo "Run delay and jitter"
-  sudo tc qdisc add dev eth0 root netem delay 10ms 10ms rate 100mbit 
+  sudo tc qdisc add dev eth0 root netem delay ${atraso}ms ${varicao}ms rate ${taxa}mbit 
   touch ~/download
   touch ~/quic_delay_jitter.pcap
 
   tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_delay_jitter.pcap &> /dev/null &
 
   cd ~/chromium/src
-  timeout 120s bash -c while :
+  timeout 120s bash -c -- while :
   do
     ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done
@@ -64,14 +68,14 @@ quic_delay_jitter () {
 
 quic_loss () {
   echo "Run loss"
-  sudo tc qdisc add dev eth0 root netem loss 10% rate 100mbit
+  sudo tc qdisc add dev eth0 root netem loss 10% rate ${taxa}mbit
   touch ~/download
   touch ~/quic_loss.pcap
 
   tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_loss.pcap &> /dev/null &
 
   cd ~/chromium/src
-  timeout 120s bash -c while :
+  timeout 120s bash -c -- while :
   do
     ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null; 
   done
@@ -79,8 +83,12 @@ quic_loss () {
   clean
   cd ~/ 
 }
-
+echo date +"%T"
 quic_normal
+echo date +"%T"
 quic_delay
+echo date +"%T"
 quic_delay_jitter
+echo date +"%T"
 quic_loss
+echo date +"%T"
