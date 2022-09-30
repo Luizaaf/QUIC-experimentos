@@ -4,6 +4,7 @@
 
 # Limita a taxa de tranferência para ${taxa} mbits
 
+time="60"
 taxa="100"
 atraso="10"
 varicao="10"
@@ -23,9 +24,9 @@ quic_normal () {
 
   cd ~/chromium/src
   
-  timeout 120s bash -c -- 'while :
+  timeout ${time}s bash -c -- 'while :
   do
-    ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
+    ./out/Default/quic_client --disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done'
 
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
@@ -42,9 +43,9 @@ quic_delay () {
 
   cd ~/chromium/src
   
-  timeout 120s bash -c -- 'while :
+  timeout ${time}s bash -c -- 'while :
   do
-    ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
+    ./out/Default/quic_client --disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done'  
 
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &  
@@ -62,9 +63,9 @@ quic_delay_jitter () {
 
   cd ~/chromium/src
   
-  timeout 120s bash -c -- 'while :
+  timeout ${time}s bash -c -- 'while :
   do
-    ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
+    ./out/Default/quic_client --disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done'  
   
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
@@ -82,21 +83,21 @@ quic_loss () {
 
   cd ~/chromium/src
   
-  timeout 120s bash -c -- 'while :
+  timeout ${time}s bash -c -- 'while :
   do
-    ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
+    ./out/Default/quic_client --disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done'  
 
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
   clean
   cd ~/ 
 }
-echo date +"%T"
+echo $(date +"%T")
 quic_normal
-echo date +"%T"
+echo $(date +"%T")
 quic_delay
-echo date +"%T"
+echo $(date +"%T")
 quic_delay_jitter
-echo date +"%T"
+echo $(date +"%T")
 quic_loss
-echo date +"%T"
+echo $(date +"%T")
