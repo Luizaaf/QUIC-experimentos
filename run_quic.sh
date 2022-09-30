@@ -22,10 +22,12 @@ quic_normal () {
   tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
 
   cd ~/chromium/src
-  timeout 120s while :
+  
+  timeout 120s bash -c -- 'while :
   do
     ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
-  done
+  done'
+
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
   clean
   cd ~/
@@ -39,10 +41,12 @@ quic_delay () {
   tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_delay.pcap &> /dev/null &
 
   cd ~/chromium/src
-  timeout 120s while :
+  
+  timeout 120s bash -c -- 'while :
   do
     ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
-  done
+  done'  
+
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &  
   clean
   cd ~/
@@ -57,10 +61,12 @@ quic_delay_jitter () {
   tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_delay_jitter.pcap &> /dev/null &
 
   cd ~/chromium/src
-  timeout 120s while :
+  
+  timeout 120s bash -c -- 'while :
   do
     ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
-  done
+  done'  
+  
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
   clean  
   cd ~/
@@ -75,10 +81,12 @@ quic_loss () {
   tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_loss.pcap &> /dev/null &
 
   cd ~/chromium/src
-  timeout 120s while :
+  
+  timeout 120s bash -c -- 'while :
   do
-    ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null; 
-  done
+    ./out/Default/quic_client -disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
+  done'  
+
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
   clean
   cd ~/ 
