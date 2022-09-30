@@ -26,7 +26,7 @@ quic_normal () {
   
   timeout ${time}s bash -c -- 'while :
   do
-    ./out/Default/quic_client --disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
+    ./out/Default/quic_client --disable_certificate_verification --allow_unknown_root_cert --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done'
 
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
@@ -45,7 +45,7 @@ quic_delay () {
   
   timeout ${time}s bash -c -- 'while :
   do
-    ./out/Default/quic_client --disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
+    ./out/Default/quic_client --disable_certificate_verification --allow_unknown_root_cert --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done'  
 
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &  
@@ -65,7 +65,7 @@ quic_delay_jitter () {
   
   timeout ${time}s bash -c -- 'while :
   do
-    ./out/Default/quic_client --disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
+    ./out/Default/quic_client --disable_certificate_verification --allow_unknown_root_cert --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done'  
   
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
@@ -85,7 +85,7 @@ quic_loss () {
   
   timeout ${time}s bash -c -- 'while :
   do
-    ./out/Default/quic_client --disable_certificate_verification --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
+    ./out/Default/quic_client --disable_certificate_verification --allow_unknown_root_cert --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
   done'  
 
   kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
