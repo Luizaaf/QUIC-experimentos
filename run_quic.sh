@@ -1,103 +1,38 @@
 #!/bin/bash
 
-# tcpdump -i lo -wv port 6121 test.pcap
-
-# Limita a taxa de tranferência para ${taxa} mbits
-
-time="60"
-taxa="100"
-atraso="10"
-varicao="10"
+taxa=${1}
+taxa=$(expr ${taxa} \* 1024)
 
 clean () {
-  sudo tc qdisc del dev eth0 root
-  rm ~/download
+  tc qdisc del dev enp0s3 root
+}
+
+setTaxa () {
+  wondershaper enp0s3 ${taxa} ${taxa}
 }
 
 quic_normal () {
   echo "Run normal"
-  sudo tc qdisc add dev eth0 root tbf rate ${taxa}mbit burst 32kbit latency 400ms
-  touch ~/download
-  touch ~/quic_normal.pcap
 
-  tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
-
-  cd ~/chromium/src
-  
-  timeout ${time}s bash -c -- 'while :
+  for i in {1..100}
   do
-    ./out/Default/quic_client --disable_certificate_verification --allow_unknown_root_cert --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
-  done'
-
-  kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
-  clean
-  cd ~/
+    echo -e "Request ${i}\nTime: $(date +"%T")\n$(docker run -it --rm ymuski/curl-http3 curl -s -w 'time_namelookup:\t\t%{time_namelookup} s\ntime_connect:\t\t\t%{time_connect} s\ntime_appconnect:\t\t%{time_appconnect} s\ntime_redirect:\t\t\t%{time_redirect} s\ntime_pretransfer:\t\t%{time_pretransfer} s\ntime_starttransfer:\t\t%{time_starttransfer} s\ntime_total:\t\t\t%{time_total} s\n\nsize_download:\t\t\t%{size_download} bytes\nsize_header:\t\t\t%{size_header} bytes\n\nspeed_download:\t\t\t%{speed_download} bytes/s\n' -o /dev/null https://www.youtube.com/ --http3)" >> /home/luiz/quic_normal.txt
+  done
 }
+
 quic_delay () {
   echo "Run delay"
-  sudo tc qdisc add dev eth0 root netem delay ${atraso}ms rate ${taxa}mbit
-  touch ~/download
-  touch ~/quic_delay.pcap
-
-  tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_delay.pcap &> /dev/null &
-
-  cd ~/chromium/src
+  tc qdisc add dev enp0s3 root netem delay 10ms
   
-  timeout ${time}s bash -c -- 'while :
+  for i in {0..100}
   do
-    ./out/Default/quic_client --disable_certificate_verification --allow_unknown_root_cert --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
-  done'  
-
-  kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &  
-  clean
-  cd ~/
+    echo -e "Request ${i}\nTime: $(date +"%T")\n$(docker run -it --rm ymuski/curl-http3 curl -s -w 'time_namelookup:\t\t%{time_namelookup} s\ntime_connect:\t\t\t%{time_connect} s\ntime_appconnect:\t\t%{time_appconnect} s\ntime_redirect:\t\t\t%{time_redirect} s\ntime_pretransfer:\t\t%{time_pretransfer} s\ntime_starttransfer:\t\t%{time_starttransfer} s\ntime_total:\t\t\t%{time_total} s\n\nsize_download:\t\t\t%{size_download} bytes\nsize_header:\t\t\t%{size_header} bytes\n\nspeed_download:\t\t\t%{speed_download} bytes/s\n' -o /dev/null https://www.youtube.com/ --http3)" >> /home/luiz/quic_delay.txt
+  done
 }
 
-quic_delay_jitter () {
-  echo "Run delay and jitter"
-  sudo tc qdisc add dev eth0 root netem delay ${atraso}ms ${varicao}ms rate ${taxa}mbit 
-  touch ~/download
-  touch ~/quic_delay_jitter.pcap
 
-  tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_delay_jitter.pcap &> /dev/null &
-
-  cd ~/chromium/src
-  
-  timeout ${time}s bash -c -- 'while :
-  do
-    ./out/Default/quic_client --disable_certificate_verification --allow_unknown_root_cert --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
-  done'  
-  
-  kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
-  clean  
-  cd ~/
-}
-
-quic_loss () {
-  echo "Run loss"
-  sudo tc qdisc add dev eth0 root netem loss 10% rate ${taxa}mbit
-  touch ~/download
-  touch ~/quic_loss.pcap
-
-  tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_loss.pcap &> /dev/null &
-
-  cd ~/chromium/src
-  
-  timeout ${time}s bash -c -- 'while :
-  do
-    ./out/Default/quic_client --disable_certificate_verification --allow_unknown_root_cert --host=172.31.82.138 --port=6121 https://www.example.org/ > download &> /dev/null
-  done'  
-
-  kill tshark -i eth0 -f "host 172.31.82.138" -w ~/quic_normal.pcap &> /dev/null &
-  clean
-  cd ~/ 
-}
-echo $(date +"%T")
+setTaxa
 quic_normal
-echo $(date +"%T")
+clean
 quic_delay
-echo $(date +"%T")
-quic_delay_jitter
-echo $(date +"%T")
-quic_loss
-echo $(date +"%T")
+clean

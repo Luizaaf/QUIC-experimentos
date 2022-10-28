@@ -1,86 +1,38 @@
 #!/bin/bash
 
-# tcpdump -i lo -wv port 6121 test.pcap
-
-# Limita a taxa de tranferência para 100 mbits
+taxa=${1}
+taxa=$(expr ${taxa} \* 1024)
 
 clean () {
-  sudo tc qdisc del dev eth0 root
-  rm ~/index.html
+  tc qdisc del dev enp0s3 root
+}
+
+setTaxa () {
+  wondershaper enp0s3 ${taxa} ${taxa}
 }
 
 tcp_normal () {
   echo "Run normal"
-  sudo tc qdisc add dev eth0 root tbf rate 100mbit burst 32kbit latency 400ms
-  touch ~/index.html
-  touch ~/tcp_normal.pcap
 
-  tshark -i eth0 -f "host 172.31.82.138" -w ~/tcp_normal.pcap &> /dev/null &
-
-  cd ~/chromium/src
-  for i in {0..10}
+  for i in {1..100}
   do
-    wget -O ~/index.html https://172.31.82.138/ --no-check-certificate &> /dev/null
+    echo -e "Request ${i}\nTime: $(date +"%T")\n$(docker run -it --rm ymuski/curl-http3 curl -s -w 'time_namelookup:\t\t%{time_namelookup} s\ntime_connect:\t\t\t%{time_connect} s\ntime_appconnect:\t\t%{time_appconnect} s\ntime_redirect:\t\t\t%{time_redirect} s\ntime_pretransfer:\t\t%{time_pretransfer} s\ntime_starttransfer:\t\t%{time_starttransfer} s\ntime_total:\t\t\t%{time_total} s\n\nsize_download:\t\t\t%{size_download} bytes\nsize_header:\t\t\t%{size_header} bytes\n\nspeed_download:\t\t\t%{speed_download} bytes/s\n' -o /dev/null https://www.youtube.com/)" >> /home/luiz/tcp_normal.txt
   done
-  kill tshark -i eth0 -f "host 172.31.82.138" -w ~/tcp_normal.pcap &> /dev/null &
-  clean
-  cd ~/
 }
+
 tcp_delay () {
   echo "Run delay"
-  sudo tc qdisc add dev eth0 root netem delay 10ms rate 100mbit
-  touch ~/index.html
-  touch ~/tcp_delay.pcap
-
-  tshark -i eth0 -f "host 172.31.82.138" -w ~/tcp_delay.pcap &> /dev/null &
-
-  cd ~/chromium/src
-  for i in {0..10}
+  tc qdisc add dev enp0s3 root netem delay 10ms
+  
+  for i in {0..100}
   do
-    wget -O ~/index.html https://172.31.82.138/ --no-check-certificate &> /dev/null
+    echo -e "Request ${i}\nTime: $(date +"%T")\n$(docker run -it --rm ymuski/curl-http3 curl -s -w 'time_namelookup:\t\t%{time_namelookup} s\ntime_connect:\t\t\t%{time_connect} s\ntime_appconnect:\t\t%{time_appconnect} s\ntime_redirect:\t\t\t%{time_redirect} s\ntime_pretransfer:\t\t%{time_pretransfer} s\ntime_starttransfer:\t\t%{time_starttransfer} s\ntime_total:\t\t\t%{time_total} s\n\nsize_download:\t\t\t%{size_download} bytes\nsize_header:\t\t\t%{size_header} bytes\n\nspeed_download:\t\t\t%{speed_download} bytes/s\n' -o /dev/null https://www.youtube.com/)" >> /home/luiz/tcp_delay.txt
   done
-  kill tshark -i eth0 -f "host 172.31.82.138" -w ~/tcp_normal.pcap &> /dev/null &  
-  clean
-  cd ~/
 }
 
-tcp_delay_jitter () {
-  echo "Run delay and jitter"
-  sudo tc qdisc add dev eth0 root netem delay 10ms 10ms rate 100mbit 
-  touch ~/index.html
-  touch ~/tcp_delay_jitter.pcap
 
-  tshark -i eth0 -f "host 172.31.82.138" -w ~/tcp_delay_jitter.pcap &> /dev/null &
-
-  cd ~/chromium/src
-  for i in {0..10}
-  do
-    wget -O ~/index.html https://172.31.82.138/ --no-check-certificate &> /dev/null
-  done
-  kill tshark -i eth0 -f "host 172.31.82.138" -w ~/tcp_normal.pcap &> /dev/null &
-  clean  
-  cd ~/
-}
-
-tcp_loss () {
-  echo "Run loss"
-  sudo tc qdisc add dev eth0 root netem loss 10% rate 100mbit
-  touch ~/index.html
-  touch ~/tcp_loss.pcap
-
-  tshark -i eth0 -f "host 172.31.82.138" -w ~/tcp_loss.pcap &> /dev/null &
-
-  cd ~/chromium/src
-  for i in {0..10};
-  do
-    wget -O ~/index.html https://172.31.82.138/ --no-check-certificate &> /dev/null
-  done
-  kill tshark -i eth0 -f "host 172.31.82.138" -w ~/tcp_normal.pcap &> /dev/null &
-  clean
-  cd ~/ 
-}
-
+setTaxa
 tcp_normal
+clean
 tcp_delay
-tcp_delay_jitter
-tcp_loss
+clean
